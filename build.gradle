@@ -3,16 +3,6 @@
 plugins {
     // Apply the com.android.application plugin to the app module.
     id 'com.android.application' version '8.3.0' apply false
-    id 'org.jetbrains.kotlin.android' version '1.9.24' apply false
+    id 'org.jetbrains.kotlin.android' version '1.9.20' apply false
     id 'com.google.dagger.hilt.android' version '2.48' apply false
-    id 'kotlin-kapt' version '1.9.24' apply false
-}
-
-android {
-    // You can configure global Android options here if needed.
-}
-
-dependencies {
-    // You can add global dependencies here if needed.
-    classpath "com.google.dagger:hilt-android-gradle-plugin:2.48"
 }
