@@ -3,34 +3,38 @@ package com.example.linuxtermuxpanel
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.example.linuxtermuxpanel.ui.theme.LinuxTermuxPanelTheme
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.ComposableDestination
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.linuxtermuxpanel.ui.commands.CommandsScreen
+import com.example.linuxtermuxpanel.ui.dashboard.DashboardScreen
+import com.example.linuxtermuxpanel.ui.history.HistoryScreen
+import com.example.linuxtermuxpanel.ui.services.ServicesScreen
+import com.example.linuxtermuxpanel.ui.settings.SettingsScreen
+import com.example.linuxtermuxpanel.ui.theme.LinuxTermuxPanelTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             LinuxTermuxPanelTheme {
                 val navController = rememberNavController()
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     NavHost(navController = navController, startDestination = "dashboard") {
-                        DashboardScreen(navController)
-                        CommandsScreen(navController)
-                        HistoryScreen(navController)
-                        SettingsScreen(navController)
+                        composable("dashboard") { DashboardScreen(navController) }
+                        composable("commands") { CommandsScreen(navController) }
+                        composable("services") { ServicesScreen(navController) }
+                        composable("history") { HistoryScreen(navController) }
+                        composable("settings") { SettingsScreen(navController) }
                     }
                 }
             }
