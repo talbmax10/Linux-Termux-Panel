@@ -20,11 +20,13 @@ class FileBasedTermuxExecutor(
     companion object {
         private const val TAG = "FileBasedTermuxExecutor"
         private const val ACTION_RUN_COMMAND = "com.termux.RUN_COMMAND"
-        private const val EXTRA_COMMAND = "com.termux.RUN_COMMAND"
+        private const val EXTRA_COMMAND = "com.termux.RUN_COMMAND_PATH"
+        private const val EXTRA_ARGUMENTS = "com.termux.RUN_COMMAND_ARGUMENTS"
+        private const val EXTRA_BACKGROUND = "com.termux.RUN_COMMAND_BACKGROUND"
     }
 
     override suspend fun execute(command: String): ExecutionResult = withContext(Dispatchers.IO) {
-        if (command.isBlank()) return@withContext ExecutionResult(error = "Empty command")
+        if (command.isBlank()) return@withContext ExecutionResult(error = "Empty command", exitCode = -1)
 
         val cacheDir = context.cacheDir
         val uuid = UUID.randomUUID().toString()
@@ -34,17 +36,14 @@ class FileBasedTermuxExecutor(
         val exitCodeFile = File(cacheDir, "exitcode_$uuid.txt")
 
         try {
-            commandFile.writeText(command)
-            commandFile.setExecutable(true, false)
+            commandFile.writeText("$command\nexitCode=\$?\nprintf '%s' \"\$exitCode\" > '${exitCodeFile.absolutePath}'\n")
 
-            val termuxCommand = "sh ${commandFile.absolutePath} >${outputFile.absolutePath} 2>${errorFile.absolutePath}; echo $? >${exitCodeFile.absolutePath}"
-            Log.d(TAG, "Executing command via Termux")
-
+            val script = "sh '${commandFile.absolutePath}' > '${outputFile.absolutePath}' 2> '${errorFile.absolutePath}'"
             val intent = Intent(ACTION_RUN_COMMAND).apply {
                 setPackage(termuxPackageName)
-                putExtra("com.termux.RUN_COMMAND_PATH", "/data/data/com.termux/files/usr/bin/sh")
-                putExtra("com.termux.RUN_COMMAND_ARGUMENTS", arrayOf(commandFile.absolutePath))
-                putExtra("com.termux.RUN_COMMAND_BACKGROUND", true)
+                putExtra(EXTRA_COMMAND, "/data/data/com.termux/files/usr/bin/sh")
+                putExtra(EXTRA_ARGUMENTS, arrayOf("-c", script))
+                putExtra(EXTRA_BACKGROUND, true)
             }
             context.sendBroadcast(intent)
 
@@ -57,6 +56,7 @@ class FileBasedTermuxExecutor(
 
             if (!exitCodeFile.exists()) {
                 return@withContext ExecutionResult(
+                    output = outputFile.takeIf { it.exists() }?.readText().orEmpty(),
                     error = "Command execution timed out after $timeoutSeconds seconds",
                     exitCode = -1
                 )
