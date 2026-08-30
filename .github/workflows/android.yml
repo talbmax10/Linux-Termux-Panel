@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [master]
+    branches: ["**"]
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -27,6 +27,12 @@ jobs:
           java-version: "17"
           cache: gradle
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
@@ -37,12 +43,12 @@ jobs:
           ./gradlew --version
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --stacktrace --warning-mode all
 
       - name: Verify generated APK
         run: |
-          APK_PATH="$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
-          if [ -z "$APK_PATH" ]; then
+          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+          if [ ! -f "$APK_PATH" ]; then
             echo "ERROR: No APK was generated."
             find . -type f -name '*.apk' -print
             exit 1

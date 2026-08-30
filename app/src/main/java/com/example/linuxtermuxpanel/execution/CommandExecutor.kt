@@ -20,7 +20,7 @@ class CommandExecutor(
 
     suspend fun executeWithEnvironment(command: String, environment: String): ExecutionResult {
         val finalCommand = if (environment.equals("Ubuntu", ignoreCase = true)) {
-            UbuntuCommandWrapper(settings.ubuntuLoginCommand).wrap(command)
+            UbuntuCommandWrapper(settings.ubuntuLoginCommand).wrap(command, "Ubuntu")
         } else {
             command
         }

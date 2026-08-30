@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.linuxtermuxpanel.data.model.Command
 import com.example.linuxtermuxpanel.ui.theme.LinuxTermuxPanelTheme
 import com.example.linuxtermuxpanel.ui.viewmodel.CommandViewModel
@@ -22,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 // We remove the CommandsActivity and keep only the composable.
 // The activity will be handled by MainActivity.
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommandsScreen(navController: NavHostController) {
     val viewModel: CommandViewModel = hiltViewModel()

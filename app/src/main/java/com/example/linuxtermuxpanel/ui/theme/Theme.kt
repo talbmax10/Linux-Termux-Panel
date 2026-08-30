@@ -32,14 +32,15 @@ private val DarkColors = darkColorScheme(
     onSurface = Color(0xFFFFFFFF)
 )
 
-val ColorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors
+@Composable
+private fun appColorScheme() = if (isSystemInDarkTheme()) DarkColors else LightColors
 
 @Composable
 fun LinuxTermuxPanelTheme(
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        colorScheme = ColorScheme,
+        colorScheme = appColorScheme(),
         typography = Typography(),
         content = content
     )

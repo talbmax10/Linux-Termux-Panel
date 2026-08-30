@@ -6,11 +6,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.linuxtermuxpanel.ui.theme.LinuxTermuxPanelTheme
 import com.example.linuxtermuxpanel.ui.viewmodel.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -29,17 +31,19 @@ class SettingsActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavHostController) {
     val viewModel: SettingsViewModel = hiltViewModel()
-    val settings by viewModel.settings.collectAsState().let { it ?: Settings() }
+    val settings by viewModel.settings.collectAsState()
+    val currentSettings = settings ?: Settings()
 
     // We'll use temporary state for the fields that are being edited
-    var termuxPackageName by remember { mutableStateOf(settings.termuxPackageName) }
-    var ubuntuLoginCommand by remember { mutableStateOf(settings.ubuntuLoginCommand) }
-    var ubuntuDistributionName by remember { mutableStateOf(settings.ubuntuDistributionName) }
-    var autoWrapUbuntuCommands by remember { mutableStateOf(settings.autoWrapUbuntuCommands) }
-    var timeoutSeconds by remember { mutableStateOf(settings.timeoutSeconds) }
+    var termuxPackageName by remember { mutableStateOf(currentSettings.termuxPackageName) }
+    var ubuntuLoginCommand by remember { mutableStateOf(currentSettings.ubuntuLoginCommand) }
+    var ubuntuDistributionName by remember { mutableStateOf(currentSettings.ubuntuDistributionName) }
+    var autoWrapUbuntuCommands by remember { mutableStateOf(currentSettings.autoWrapUbuntuCommands) }
+    var timeoutSeconds by remember { mutableStateOf(currentSettings.timeoutSeconds) }
 
     Scaffold(
         topBar = {
