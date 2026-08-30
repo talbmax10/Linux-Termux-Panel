@@ -6,30 +6,27 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.linuxtermuxpanel.data.model.Command
 
-@Database(entities = [Command::class, Service::class, ExecutionHistory::class], version = 1, exportSchema = false)
+@Database(
+    entities = [Command::class, Service::class, ExecutionHistory::class],
+    version = 1,
+    exportSchema = false
+)
 abstract class CommandDatabase : RoomDatabase() {
-
     abstract fun commandDao(): CommandDao
     abstract fun serviceDao(): ServiceDao
     abstract fun executionHistoryDao(): ExecutionHistoryDao
-}
 
     companion object {
         @Volatile
         private var INSTANCE: CommandDatabase? = null
 
-        fun getDatabase(context: Context): CommandDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+        fun getDatabase(context: Context): CommandDatabase =
+            INSTANCE ?: synchronized(this) {
+                INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     CommandDatabase::class.java,
                     "command_database"
-                )
-                    .fallbackToDestructiveMigration()
-                    .build()
-                INSTANCE = instance
-                instance
+                ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
             }
-        }
     }
 }
