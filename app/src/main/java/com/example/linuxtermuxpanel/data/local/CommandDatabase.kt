@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.linuxtermuxpanel.data.model.Command
+import com.example.linuxtermuxpanel.data.model.ExecutionHistory
+import com.example.linuxtermuxpanel.data.model.Service
 
 @Database(
     entities = [Command::class, Service::class, ExecutionHistory::class],
