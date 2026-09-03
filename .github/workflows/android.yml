@@ -14,7 +14,7 @@ jobs:
   build:
     name: Build Debug APK
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
       - name: Checkout source
@@ -27,51 +27,58 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: Set up Android SDK
+      - name: Set up Android SDK with detailed logging
         uses: android-actions/setup-android@v3
         with:
-          packages: "cmdline-tools;latest, platform-tools"
+          api-level: 34
+          ndk-version: 25.2.9519653
+          packages: "platform-tools,platforms;android-34,build-tools;34.0.0,cmdline-tools;latest"
           accept-android-sdk-licenses: true
+          cache: true
 
-      - name: Install required Android SDK packages
+      - name: Display Android environment
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
+          echo "JAVA_HOME=$JAVA_HOME"
+          ls -la $ANDROID_HOME
+          ls -la $ANDROID_HOME/platforms/
+          ls -la $ANDROID_HOME/build-tools/
 
-      - name: Verify Android and Java toolchain
+      - name: Install additional packages if needed
         run: |
-          set -eux
-          java -version
-          echo "ANDROID_HOME=${ANDROID_HOME}"
-          echo "ANDROID_SDK_ROOT=${ANDROID_HOME}"
-          sdkmanager --list_installed | grep -E 'platform-tools|platforms;android-34|build-tools;34.0.0|cmdline-tools;latest'
-          test -d "${ANDROID_HOME}/platforms/android-34"
-          test -d "${ANDROID_HOME}/build-tools/34.0.0"
-          test -d "${ANDROID_HOME}/cmdline-tools/latest"
+          sdkmanager --list_installed
+          sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0" --verbose
 
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
       - name: Verify Gradle wrapper
         run: |
-          test -f gradle/wrapper/gradle-wrapper.jar
-          test -f gradle/wrapper/gradle-wrapper.properties
           ./gradlew --version
 
       - name: Set Gradle JVM options
         run: echo "org.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8" >> gradle.properties
 
       - name: Build Debug APK
-        run: ./gradlew clean assembleDebug --no-daemon --stacktrace --warning-mode all
+        run: ./gradlew clean assembleDebug --no-daemon --stacktrace
 
       - name: Verify generated APK
         run: |
           set -eux
           APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
-          test -f "$APK_PATH"
-          test -s "$APK_PATH"
-          echo "APK_PATH=$APK_PATH" >> "$GITHUB_ENV"
-          ls -lh "$APK_PATH"
+          echo "Looking for APK at: $APK_PATH"
+          if [ -f "$APK_PATH" ]; then
+            echo "APK found!"
+            ls -lh "$APK_PATH"
+            echo "APK_PATH=$APK_PATH" >> "$GITHUB_ENV"
+          else
+            echo "APK NOT FOUND!"
+            echo "Contents of app/build/outputs/apk/debug/:"
+            ls -la app/build/outputs/apk/debug/ || echo "Directory not found"
+            exit 1
+          fi
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
