@@ -27,29 +27,34 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: Set up Android SDK with detailed logging
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          ndk-version: 25.2.9519653
-          packages: "platform-tools,platforms;android-34,build-tools;34.0.0,cmdline-tools;latest"
-          accept-android-sdk-licenses: true
-          cache: true
+      - name: Install Android SDK command-line tools
+        run: |
+          # Download and install Android SDK command line tools
+          mkdir -p $HOME/android-sdk
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
+          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android-sdk --licenses
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$HOME/android-sdk/ndk/25.2.9519653" >> $GITHUB_ENV
+          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
+
+      - name: Install Android SDK platforms and build tools
+        run: |
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;25.2.9519653"
 
       - name: Display Android environment
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "ANDROID_HOME=$ANDROID_HOME"
           echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
           echo "JAVA_HOME=$JAVA_HOME"
-          ls -la $ANDROID_HOME
-          ls -la $ANDROID_HOME/platforms/
-          ls -la $ANDROID_HOME/build-tools/
-
-      - name: Install additional packages if needed
-        run: |
-          sdkmanager --list_installed
-          sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0" --verbose
+          echo "PATH=$PATH"
+          ls -la $ANDROID_SDK_ROOT
+          ls -la $ANDROID_SDK_ROOT/platforms/
+          ls -la $ANDROID_SDK_ROOT/build-tools/
+          ls -la $ANDROID_NDK_ROOT
 
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
