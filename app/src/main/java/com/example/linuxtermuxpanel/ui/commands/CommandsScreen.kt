@@ -25,9 +25,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 
-// We remove the CommandsActivity and keep only the composable.
-// The activity will be handled by MainActivity.
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommandsScreen(navController: NavHostController) {
@@ -40,12 +37,16 @@ fun CommandsScreen(navController: NavHostController) {
     var dialogName by remember { mutableStateOf("") }
     var dialogDescription by remember { mutableStateOf("") }
     var dialogCommand by remember { mutableStateOf("") }
-    var dialogEnvironment by remember { mutableStateOf("Termux") } // Default to Termux
+    var dialogEnvironment by remember { mutableStateOf("Termux") }
     var dialogIcon by remember { mutableStateOf("") }
     var dialogIsFavorite by remember { mutableStateOf(false) }
     var dialogRunInBackground by remember { mutableStateOf(false) }
     var dialogNeedsInteractiveTerminal by remember { mutableStateOf(false) }
     var dialogEnvironmentExpanded by remember { mutableStateOf(false) }
+
+    // Confirmation dialog state - MUST be before Scaffold
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+    var commandToDelete by remember { mutableStateOf<Command?>(null) }
 
     // Environment options
     val environments = listOf("Termux", "Ubuntu")
@@ -78,7 +79,6 @@ fun CommandsScreen(navController: NavHostController) {
             viewModel.addCommand(commandToSave)
         }
 
-        // Reset dialog state
         showDialog = false
         editingCommand = null
         dialogName = ""
@@ -253,7 +253,6 @@ fun CommandsScreen(navController: NavHostController) {
             )
         }
 
-        // List of commands
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -315,9 +314,8 @@ fun CommandsScreen(navController: NavHostController) {
                                 .padding(bottom = 4.dp)
                         )
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalArrangement(Arrangement.End)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
                         ) {
                             Button(
                                 onClick = {
@@ -338,7 +336,6 @@ fun CommandsScreen(navController: NavHostController) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
                                 onClick = {
-                                    // Show confirmation dialog
                                     showConfirmationDialog = true
                                     commandToDelete = command
                                 },
@@ -357,9 +354,6 @@ fun CommandsScreen(navController: NavHostController) {
     }
 
     // Confirmation dialog for deletion
-    var showConfirmationDialog by remember { mutableStateOf(false) }
-    var commandToDelete by remember { mutableStateOf<Command?>(null) }
-
     if (showConfirmationDialog && commandToDelete != null) {
         AlertDialog(
             onDismissRequest = {
@@ -367,11 +361,11 @@ fun CommandsScreen(navController: NavHostController) {
                 commandToDelete = null
             },
             title = { Text("تأكيد الحذف") },
-            text = { Text("هل أنت متأكد من حذف الأمر \"${commandToDelete.name}\"؟") },
+            text = { Text("هل أنت متأكد من حذف الأمر \"${commandToDelete?.name}\"؟") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.deleteCommand(commandToDelete!!)
+                        commandToDelete?.let { viewModel.deleteCommand(it) }
                         showConfirmationDialog = false
                         commandToDelete = null
                     }

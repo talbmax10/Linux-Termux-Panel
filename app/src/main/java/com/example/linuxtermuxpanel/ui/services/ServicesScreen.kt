@@ -50,13 +50,16 @@ fun ServicesScreen(navController: NavHostController) {
     var dialogStopCommand by remember { mutableStateOf("") }
     var dialogStatusCommand by remember { mutableStateOf("") }
     var dialogRestartCommand by remember { mutableStateOf("") }
-    var dialogEnvironment by remember { mutableStateOf("Termux") } // Default to Termux
+    var dialogEnvironment by remember { mutableStateOf("Termux") }
     var dialogEnvironmentExpanded by remember { mutableStateOf(false) }
+
+    // Confirmation dialog state - MUST be before Scaffold
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+    var serviceToDelete by remember { mutableStateOf<Service?>(null) }
 
     // Environment options
     val environments = listOf("Termux", "Ubuntu")
 
-    // Handle saving the service
     val onSaveService = {
         val serviceToSave = editingService ?: Service(
             name = dialogName,
@@ -80,7 +83,6 @@ fun ServicesScreen(navController: NavHostController) {
             viewModel.addService(serviceToSave)
         }
 
-        // Reset dialog state
         showDialog = false
         editingService = null
         dialogName = ""
@@ -119,7 +121,7 @@ fun ServicesScreen(navController: NavHostController) {
             }
         },
         floatingActionButtonPosition = FabPosition.End
-    ) {
+    ) { paddingValues ->
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
@@ -218,10 +220,10 @@ fun ServicesScreen(navController: NavHostController) {
             )
         }
 
-        // List of services
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
                 .padding(16.dp)
         ) {
             items(services) { service ->
@@ -249,15 +251,13 @@ fun ServicesScreen(navController: NavHostController) {
                                     .wrapContentWidth(Alignment.Start)
                             )
                         }
-                        if (service.startCommand.isNotEmpty()) {
-                            Text(
-                                text = "أمر التشغيل: ${service.startCommand}",
-                                style = MaterialTheme.typography.labelLarge,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 4.dp)
-                            )
-                        }
+                        Text(
+                            text = "أمر التشغيل: ${service.startCommand}",
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 4.dp)
+                        )
                         if (service.stopCommand.isNotEmpty()) {
                             Text(
                                 text = "أمر الإيقاف: ${service.stopCommand}",
@@ -302,9 +302,9 @@ fun ServicesScreen(navController: NavHostController) {
                                     editingService = service
                                     dialogName = service.name
                                     dialogStartCommand = service.startCommand
-                                    dialogStopCommand = service.stopCommand ?: ""
-                                    dialogStatusCommand = service.statusCommand ?: ""
-                                    dialogRestartCommand = service.restartCommand ?: ""
+                                    dialogStopCommand = service.stopCommand
+                                    dialogStatusCommand = service.statusCommand
+                                    dialogRestartCommand = service.restartCommand
                                     dialogEnvironment = service.environment
                                 }
                             ) {
@@ -313,7 +313,6 @@ fun ServicesScreen(navController: NavHostController) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
                                 onClick = {
-                                    // Show confirmation dialog
                                     showConfirmationDialog = true
                                     serviceToDelete = service
                                 },
@@ -331,10 +330,6 @@ fun ServicesScreen(navController: NavHostController) {
         }
     }
 
-    // Confirmation dialog for deletion
-    var showConfirmationDialog by remember { mutableStateOf(false) }
-    var serviceToDelete by remember { mutableStateOf<Service?>(null) }
-
     if (showConfirmationDialog && serviceToDelete != null) {
         AlertDialog(
             onDismissRequest = {
@@ -342,11 +337,11 @@ fun ServicesScreen(navController: NavHostController) {
                 serviceToDelete = null
             },
             title = { Text("تأكيد الحذف") },
-            text = { Text("هل أنت متأكد من حذف الخدمة \"${serviceToDelete.name}\"؟") },
+            text = { Text("هل أنت متأكد من حذف الخدمة \"${serviceToDelete?.name}\"؟") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.deleteService(serviceToDelete!!)
+                        serviceToDelete?.let { viewModel.deleteService(it) }
                         showConfirmationDialog = false
                         serviceToDelete = null
                     }

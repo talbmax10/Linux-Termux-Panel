@@ -227,10 +227,9 @@ fun DashboardScreen(navController: NavHostController) {
                                     }
                                 }
                                 Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .horizontalArrangement(Arrangement.SpaceBetween)
-                                        .verticalAlignment(Alignment.CenterVertically)
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
                                         text = "${item.exitCode}",

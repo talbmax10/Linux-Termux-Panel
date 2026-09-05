@@ -23,7 +23,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 @AndroidEntryPoint
@@ -65,36 +64,34 @@ fun HistoryScreen(navController: NavHostController) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    // Show confirmation dialog for clearing all history
                     showConfirmationDialog = true
-                    historyToDelete = null // Indicates we want to clear all
+                    historyToDelete = null
                 }
             ) {
                 Icon(Icons.Default.DeleteSweep, contentDescription = "مسح السجل")
             }
         },
         floatingActionButtonPosition = FabPosition.End
-    ) {
+    ) { paddingValues ->
         if (history.isEmpty()) {
-            // Show a message when there's no history
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp)
-                    .align(Alignment.Center)
+                    .padding(paddingValues)
+                    .wrapContentSize(Alignment.Center),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "لا توجد سجلات تنفيذ بعد",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.Center)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         } else {
-            // List of history items
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(paddingValues)
                     .padding(16.dp)
             ) {
                 items(history) { item ->
@@ -121,7 +118,6 @@ fun HistoryScreen(navController: NavHostController) {
                                         .weight(1f)
                                         .wrapContentWidth(Alignment.Start)
                                 )
-                                // Success icon
                                 if (item.success) {
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
@@ -174,8 +170,7 @@ fun HistoryScreen(navController: NavHostController) {
                                 )
                             }
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -183,20 +178,10 @@ fun HistoryScreen(navController: NavHostController) {
                                     text = "رمز الخروج: ${item.exitCode}",
                                     style = MaterialTheme.typography.labelLarge
                                 )
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        text = "البدء: ${dateFormatter.format(item.startedAt)}",
-                                        style = MaterialTheme.typography.labelLarge
-                                    )
-                                    item.finishedAt?.let { finishedAt ->
-                                        Text(
-                                            text = "النهاية: ${dateFormatter.format(finishedAt)}",
-                                            style = MaterialTheme.typography.labelLarge
-                                        )
-                                    }
-                                }
+                                Text(
+                                    text = "البدء: ${dateFormatter.format(item.startedAt)}",
+                                    style = MaterialTheme.typography.labelLarge
+                                )
                             }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -220,50 +205,47 @@ fun HistoryScreen(navController: NavHostController) {
                 }
             }
         }
+    }
 
-        // Confirmation dialog for deletion (single item or all)
-        if (showConfirmationDialog) {
-            AlertDialog(
-                onDismissRequest = {
-                    showConfirmationDialog = false
-                    historyToDelete = null
-                },
-                title = { Text("تأكيد الحذف") },
-                text = {
-                    if (historyToDelete == null) {
-                        Text("هل أنت متأكد من مسح السجل بالكامل؟")
-                    } else {
-                        Text("هل أنت متأكد من حذف هذا السجل؟")
-                    }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            if (historyToDelete == null) {
-                                // Clear all history
-                                viewModel.deleteAllExecutionHistory()
-                            } else {
-                                // Delete the specific item
-                                viewModel.deleteExecutionHistory(historyToDelete!!)
-                            }
-                            showConfirmationDialog = false
-                            historyToDelete = null
-                        }
-                    ) {
-                        Text("حذف")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showConfirmationDialog = false
-                            historyToDelete = null
-                        }
-                    ) {
-                        Text("إلغاء")
-                    }
+    if (showConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showConfirmationDialog = false
+                historyToDelete = null
+            },
+            title = { Text("تأكيد الحذف") },
+            text = {
+                if (historyToDelete == null) {
+                    Text("هل أنت متأكد من مسح السجل بالكامل؟")
+                } else {
+                    Text("هل أنت متأكد من حذف هذا السجل؟")
                 }
-            )
-        }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (historyToDelete == null) {
+                            viewModel.deleteAllExecutionHistory()
+                        } else {
+                            viewModel.deleteExecutionHistory(historyToDelete!!)
+                        }
+                        showConfirmationDialog = false
+                        historyToDelete = null
+                    }
+                ) {
+                    Text("حذف")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmationDialog = false
+                        historyToDelete = null
+                    }
+                ) {
+                    Text("إلغاء")
+                }
+            }
+        )
     }
 }
