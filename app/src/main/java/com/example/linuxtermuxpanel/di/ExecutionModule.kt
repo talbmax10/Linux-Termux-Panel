@@ -1,11 +1,9 @@
 package com.example.linuxtermuxpanel.di
 
-import com.example.linuxtermuxpanel.execution.CommandExecutor
 import com.example.linuxtermuxpanel.execution.ShellCommandExecutor
 import com.example.linuxtermuxpanel.execution.TermuxCommandExecutor
 import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -19,12 +17,4 @@ abstract class ExecutionModule {
     abstract fun bindTermuxCommandExecutor(
         shellCommandExecutor: ShellCommandExecutor
     ): TermuxCommandExecutor
-
-    @Provides
-    @Singleton
-    fun provideCommandExecutor(
-        termuxExecutor: TermuxCommandExecutor
-    ): CommandExecutor {
-        return CommandExecutor(termuxExecutor)
-    }
 }
