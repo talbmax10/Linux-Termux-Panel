@@ -23,7 +23,7 @@ class UbuntuCommandWrapper(
             // We need to properly escape the command for bash -lc.
             // We'll wrap the command in single quotes and escape any existing single quotes.
             val escapedCommand = command.replace("'", "'\\''")
-            "$ubuntuLoginCommand -- bash -lc '$escapedCommand'"
+            "/data/data/com.termux/files/usr/bin/proot-distro login ubuntu -- bash -lc '$escapedCommand'"
         } else {
             command
         }
