@@ -110,7 +110,7 @@ fun SettingsScreen(navController: NavHostController) {
                 )
                 Switch(
                     checked = autoWrapUbuntuCommands,
-                    onValueChange = { autoWrapUbuntuCommands = it }
+                    onCheckedChange = { autoWrapUbuntuCommands = it }
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
