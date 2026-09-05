@@ -3,15 +3,18 @@ package com.example.linuxtermuxpanel.ui.services
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.linuxtermuxpanel.data.model.Service
@@ -162,7 +165,7 @@ fun ServicesScreen(navController: NavHostController) {
                             value = dialogEnvironment,
                             onValueChange = { dialogEnvironment = it },
                             readOnly = true,
-                            suffixIcon = {
+                            trailingIcon = {
                                 IconButton(
                                     onClick = { dialogEnvironmentExpanded = !dialogEnvironmentExpanded }
                                 ) {
@@ -290,9 +293,8 @@ fun ServicesScreen(navController: NavHostController) {
                                 .padding(bottom = 4.dp)
                         )
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalArrangement = Arrangement.End
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
                         ) {
                             Button(
                                 onClick = {
@@ -315,8 +317,10 @@ fun ServicesScreen(navController: NavHostController) {
                                     showConfirmationDialog = true
                                     serviceToDelete = service
                                 },
-                                color = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
+                                )
                             ) {
                                 Text("حذف")
                             }

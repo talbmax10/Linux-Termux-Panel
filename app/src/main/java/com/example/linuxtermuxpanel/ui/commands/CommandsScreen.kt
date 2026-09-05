@@ -3,15 +3,19 @@ package com.example.linuxtermuxpanel.ui.commands
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.linuxtermuxpanel.data.model.Command
@@ -151,7 +155,7 @@ fun CommandsScreen(navController: NavHostController) {
                             value = dialogEnvironment,
                             onValueChange = { dialogEnvironment = it },
                             readOnly = true,
-                            suffixIcon = {
+                            trailingIcon = {
                                 IconButton(
                                     onClick = { dialogEnvironmentExpanded = !dialogEnvironmentExpanded }
                                 ) {
@@ -197,7 +201,7 @@ fun CommandsScreen(navController: NavHostController) {
                             )
                             Switch(
                                 checked = dialogIsFavorite,
-                                onValueChange = { dialogIsFavorite = it }
+                                onCheckedChange = { dialogIsFavorite = it }
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -210,7 +214,7 @@ fun CommandsScreen(navController: NavHostController) {
                             )
                             Switch(
                                 checked = dialogRunInBackground,
-                                onValueChange = { dialogRunInBackground = it }
+                                onCheckedChange = { dialogRunInBackground = it }
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -223,7 +227,7 @@ fun CommandsScreen(navController: NavHostController) {
                             )
                             Switch(
                                 checked = dialogNeedsInteractiveTerminal,
-                                onValueChange = { dialogNeedsInteractiveTerminal = it }
+                                onCheckedChange = { dialogNeedsInteractiveTerminal = it }
                             )
                         }
                     }
@@ -313,7 +317,7 @@ fun CommandsScreen(navController: NavHostController) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .horizontalArrangement = Arrangement.End
+                                .horizontalArrangement(Arrangement.End)
                         ) {
                             Button(
                                 onClick = {
@@ -338,8 +342,10 @@ fun CommandsScreen(navController: NavHostController) {
                                     showConfirmationDialog = true
                                     commandToDelete = command
                                 },
-                                color = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
+                                )
                             ) {
                                 Text("حذف")
                             }

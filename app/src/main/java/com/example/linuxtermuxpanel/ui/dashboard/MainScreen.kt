@@ -6,9 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -216,7 +216,7 @@ fun DashboardScreen(navController: NavHostController) {
                                         Icon(
                                             imageVector = Icons.Default.CheckCircle,
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.success
+                                            tint = MaterialTheme.colorScheme.primary
                                         )
                                     } else {
                                         Icon(
@@ -229,8 +229,8 @@ fun DashboardScreen(navController: NavHostController) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .horizontalArrangement = Arrangement.SpaceBetween
-                                        .verticalAlignment = Alignment.CenterVertically
+                                        .horizontalArrangement(Arrangement.SpaceBetween)
+                                        .verticalAlignment(Alignment.CenterVertically)
                                 ) {
                                     Text(
                                         text = "${item.exitCode}",

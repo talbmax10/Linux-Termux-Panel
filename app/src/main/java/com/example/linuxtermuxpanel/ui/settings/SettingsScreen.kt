@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.linuxtermuxpanel.ui.theme.LinuxTermuxPanelTheme
+import com.example.linuxtermuxpanel.ui.viewmodel.Settings
 import com.example.linuxtermuxpanel.ui.viewmodel.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.NavHostController
@@ -39,11 +40,11 @@ fun SettingsScreen(navController: NavHostController) {
     val currentSettings = settings ?: Settings()
 
     // We'll use temporary state for the fields that are being edited
-    var termuxPackageName by remember { mutableStateOf(currentSettings.termuxPackageName) }
-    var ubuntuLoginCommand by remember { mutableStateOf(currentSettings.ubuntuLoginCommand) }
-    var ubuntuDistributionName by remember { mutableStateOf(currentSettings.ubuntuDistributionName) }
-    var autoWrapUbuntuCommands by remember { mutableStateOf(currentSettings.autoWrapUbuntuCommands) }
-    var timeoutSeconds by remember { mutableStateOf(currentSettings.timeoutSeconds) }
+    var termuxPackageName by remember { mutableStateOf<String>(currentSettings.termuxPackageName) }
+    var ubuntuLoginCommand by remember { mutableStateOf<String>(currentSettings.ubuntuLoginCommand) }
+    var ubuntuDistributionName by remember { mutableStateOf<String>(currentSettings.ubuntuDistributionName) }
+    var autoWrapUbuntuCommands by remember { mutableStateOf<Boolean>(currentSettings.autoWrapUbuntuCommands) }
+    var timeoutSeconds by remember { mutableStateOf<Int>(currentSettings.timeoutSeconds) }
 
     Scaffold(
         topBar = {

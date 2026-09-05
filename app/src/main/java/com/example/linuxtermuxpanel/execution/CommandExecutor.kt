@@ -12,7 +12,7 @@ class CommandExecutor(
     init {
         val termuxPackageName = settings.termuxPackageName.ifEmpty { "com.termux" }
         val timeoutSeconds = if (settings.timeoutSeconds > 0) settings.timeoutSeconds else 30
-        termuxExecutor = FileBasedTermuxExecutor(context, termuxPackageName, timeoutSeconds)
+        termuxExecutor = FileBasedTermuxExecutor(context, termuxPackageName, timeoutSeconds.toLong())
     }
 
     override suspend fun execute(command: String): ExecutionResult =
