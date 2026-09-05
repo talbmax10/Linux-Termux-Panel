@@ -1,7 +1,7 @@
 package com.example.linuxtermuxpanel.execution
 
 import android.content.Context
-import com.example.linuxtermuxpanel.ui.settings.Settings
+import com.example.linuxtermuxpanel.ui.viewmodel.Settings
 
 class CommandExecutor(
     context: Context,

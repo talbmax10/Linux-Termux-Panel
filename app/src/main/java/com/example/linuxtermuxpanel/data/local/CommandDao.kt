@@ -8,7 +8,6 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.linuxtermuxpanel.data.model.Command
 import kotlinx.coroutines.flow.Flow
-import java.util.List
 
 @Dao
 interface CommandDao {
