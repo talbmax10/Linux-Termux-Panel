@@ -342,7 +342,7 @@ fun CommandsScreen(navController: NavHostController) {
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp, Arrangement.End)
+                            horizontalArrangement = Arrangement.End
                         ) {
                             // زر التشغيل
                             FilledTonalButton(
