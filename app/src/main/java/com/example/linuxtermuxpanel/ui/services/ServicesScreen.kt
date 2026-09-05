@@ -258,7 +258,7 @@ fun ServicesScreen(navController: NavHostController) {
                                 .fillMaxWidth()
                                 .padding(bottom = 4.dp)
                         )
-                        if (service.stopCommand.isNotEmpty()) {
+                        if (!service.stopCommand.isNullOrEmpty()) {
                             Text(
                                 text = "أمر الإيقاف: ${service.stopCommand}",
                                 style = MaterialTheme.typography.labelLarge,
@@ -267,7 +267,7 @@ fun ServicesScreen(navController: NavHostController) {
                                     .padding(bottom = 4.dp)
                             )
                         }
-                        if (service.statusCommand.isNotEmpty()) {
+                        if (!service.statusCommand.isNullOrEmpty()) {
                             Text(
                                 text = "أمر فحص الحالة: ${service.statusCommand}",
                                 style = MaterialTheme.typography.labelLarge,
@@ -276,7 +276,7 @@ fun ServicesScreen(navController: NavHostController) {
                                     .padding(bottom = 4.dp)
                             )
                         }
-                        if (service.restartCommand.isNotEmpty()) {
+                        if (!service.restartCommand.isNullOrEmpty()) {
                             Text(
                                 text = "أمر إعادة التشغيل: ${service.restartCommand}",
                                 style = MaterialTheme.typography.labelLarge,
@@ -302,9 +302,9 @@ fun ServicesScreen(navController: NavHostController) {
                                     editingService = service
                                     dialogName = service.name
                                     dialogStartCommand = service.startCommand
-                                    dialogStopCommand = service.stopCommand
-                                    dialogStatusCommand = service.statusCommand
-                                    dialogRestartCommand = service.restartCommand
+                                    dialogStopCommand = service.stopCommand ?: ""
+                                    dialogStatusCommand = service.statusCommand ?: ""
+                                    dialogRestartCommand = service.restartCommand ?: ""
                                     dialogEnvironment = service.environment
                                 }
                             ) {
