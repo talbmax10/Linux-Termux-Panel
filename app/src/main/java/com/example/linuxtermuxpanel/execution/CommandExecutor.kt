@@ -1,19 +1,19 @@
 package com.example.linuxtermuxpanel.execution
 
-import android.content.Context
 import com.example.linuxtermuxpanel.ui.viewmodel.Settings
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class CommandExecutor(
-    context: Context,
-    private val settings: Settings
-) : TermuxCommandExecutor {
+/**
+ * Command executor that wraps commands for different environments.
+ * Uses the injected TermuxCommandExecutor for actual execution.
+ */
+class CommandExecutor @Inject constructor(
     private val termuxExecutor: TermuxCommandExecutor
+) : TermuxCommandExecutor {
 
-    init {
-        val termuxPackageName = settings.termuxPackageName.ifEmpty { "com.termux" }
-        val timeoutSeconds = if (settings.timeoutSeconds > 0) settings.timeoutSeconds else 30
-        termuxExecutor = FileBasedTermuxExecutor(context, termuxPackageName, timeoutSeconds.toLong())
-    }
+    // Default settings - in a real app, this would come from DataStore
+    private val settings = Settings()
 
     override suspend fun execute(command: String): ExecutionResult =
         termuxExecutor.execute(command)
