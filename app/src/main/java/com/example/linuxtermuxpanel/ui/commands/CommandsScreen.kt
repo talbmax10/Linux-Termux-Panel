@@ -8,7 +8,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -30,6 +32,8 @@ import androidx.navigation.compose.rememberNavController
 fun CommandsScreen(navController: NavHostController) {
     val viewModel: CommandViewModel = hiltViewModel()
     val commands by viewModel.commands.collectAsState()
+    val isExecuting by viewModel.isExecuting.collectAsState()
+    val executionResult by viewModel.lastExecutionResult.collectAsState()
 
     // Dialog state
     var showDialog by remember { mutableStateOf(false) }
@@ -44,14 +48,16 @@ fun CommandsScreen(navController: NavHostController) {
     var dialogNeedsInteractiveTerminal by remember { mutableStateOf(false) }
     var dialogEnvironmentExpanded by remember { mutableStateOf(false) }
 
-    // Confirmation dialog state - MUST be before Scaffold
+    // Confirmation dialog state
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var commandToDelete by remember { mutableStateOf<Command?>(null) }
+
+    // Result dialog state
+    var showResultDialog by remember { mutableStateOf(false) }
 
     // Environment options
     val environments = listOf("Termux", "Ubuntu")
 
-    // Handle saving the command
     val onSaveCommand = {
         val commandToSave = editingCommand ?: Command(
             name = dialogName,
@@ -89,6 +95,13 @@ fun CommandsScreen(navController: NavHostController) {
         dialogIsFavorite = false
         dialogRunInBackground = false
         dialogNeedsInteractiveTerminal = false
+    }
+
+    // Launch effect to show result dialog when execution completes
+    LaunchedEffect(executionResult) {
+        if (executionResult != null && !isExecuting) {
+            showResultDialog = true
+        }
     }
 
     Scaffold(
@@ -129,25 +142,30 @@ fun CommandsScreen(navController: NavHostController) {
                     Text(if (editingCommand == null) "إضافة أمر جديد" else "تعديل الأمر")
                 },
                 text = {
-                    Column {
-                        TextField(
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState())
+                    ) {
+                        OutlinedTextField(
                             label = { Text("اسم الأمر") },
                             value = dialogName,
                             onValueChange = { dialogName = it },
-                            isError = dialogName.isEmpty()
+                            isError = dialogName.isEmpty(),
+                            modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        TextField(
+                        OutlinedTextField(
                             label = { Text("الوصف (اختياري)") },
                             value = dialogDescription,
-                            onValueChange = { dialogDescription = it }
+                            onValueChange = { dialogDescription = it },
+                            modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        TextField(
+                        OutlinedTextField(
                             label = { Text("الأمر") },
                             value = dialogCommand,
                             onValueChange = { dialogCommand = it },
-                            isError = dialogCommand.isEmpty()
+                            isError = dialogCommand.isEmpty(),
+                            modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(
@@ -161,10 +179,18 @@ fun CommandsScreen(navController: NavHostController) {
                                 ) {
                                     Icon(Icons.Default.ArrowDropDown, contentDescription = null)
                                 }
-                            }
+                            },
+                            modifier = Modifier.fillMaxWidth()
                         )
                         if (dialogEnvironmentExpanded) {
-                            Column {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        RoundedCornerShape(4.dp)
+                                    )
+                            ) {
                                 environments.forEach { env ->
                                     Text(
                                         text = env,
@@ -174,10 +200,10 @@ fun CommandsScreen(navController: NavHostController) {
                                                 dialogEnvironment = env
                                                 dialogEnvironmentExpanded = false
                                             }
-                                            .padding(16.dp)
+                                            .padding(12.dp)
                                             .background(
                                                 if (dialogEnvironment == env)
-                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                                    MaterialTheme.colorScheme.primaryContainer
                                                 else
                                                     Color.Transparent
                                             )
@@ -186,14 +212,16 @@ fun CommandsScreen(navController: NavHostController) {
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        TextField(
+                        OutlinedTextField(
                             label = { Text("الأيقونة (اختياري)") },
                             value = dialogIcon,
-                            onValueChange = { dialogIcon = it }
+                            onValueChange = { dialogIcon = it },
+                            modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
                                 text = "المفضلة",
@@ -204,9 +232,10 @@ fun CommandsScreen(navController: NavHostController) {
                                 onCheckedChange = { dialogIsFavorite = it }
                             )
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
                                 text = "تشغيل في الخلفية",
@@ -217,9 +246,10 @@ fun CommandsScreen(navController: NavHostController) {
                                 onCheckedChange = { dialogRunInBackground = it }
                             )
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
                                 text = "يحتاج Terminal تفاعلي",
@@ -244,9 +274,7 @@ fun CommandsScreen(navController: NavHostController) {
                     }
                 },
                 dismissButton = {
-                    TextButton(
-                        onClick = { showDialog = false }
-                    ) {
+                    TextButton(onClick = { showDialog = false }) {
                         Text("إلغاء")
                     }
                 }
@@ -278,9 +306,7 @@ fun CommandsScreen(navController: NavHostController) {
                             Text(
                                 text = command.name,
                                 style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .wrapContentWidth(Alignment.Start)
+                                modifier = Modifier.weight(1f)
                             )
                             if (command.isFavorite) {
                                 Icon(
@@ -290,7 +316,7 @@ fun CommandsScreen(navController: NavHostController) {
                                 )
                             }
                         }
-                        if (command.description != null && command.description.isNotEmpty()) {
+                        if (!command.description.isNullOrEmpty()) {
                             Text(
                                 text = command.description,
                                 style = MaterialTheme.typography.bodySmall,
@@ -308,16 +334,32 @@ fun CommandsScreen(navController: NavHostController) {
                         )
                         Text(
                             text = "البيئة: ${command.environment}",
-                            style = MaterialTheme.typography.labelLarge,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 4.dp)
+                                .padding(bottom = 12.dp)
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Arrangement.End)
                         ) {
-                            Button(
+                            // زر التشغيل
+                            FilledTonalButton(
+                                onClick = { viewModel.executeCommand(command) },
+                                enabled = !isExecuting,
+                                modifier = Modifier
+                            ) {
+                                Icon(
+                                    imageVector = if (isExecuting) Icons.Default.HourglassTop else Icons.Default.PlayArrow,
+                                    contentDescription = "تشغيل",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("تشغيل")
+                            }
+                            // زر التعديل
+                            OutlinedButton(
                                 onClick = {
                                     showDialog = true
                                     editingCommand = command
@@ -331,19 +373,30 @@ fun CommandsScreen(navController: NavHostController) {
                                     dialogNeedsInteractiveTerminal = command.needsInteractiveTerminal
                                 }
                             ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "تعديل",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text("تعديل")
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
+                            // زر الحذف
+                            OutlinedButton(
                                 onClick = {
                                     showConfirmationDialog = true
                                     commandToDelete = command
                                 },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error,
-                                    contentColor = MaterialTheme.colorScheme.onError
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
                                 )
                             ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "حذف",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text("حذف")
                             }
                         }
@@ -381,6 +434,89 @@ fun CommandsScreen(navController: NavHostController) {
                     }
                 ) {
                     Text("إلغاء")
+                }
+            }
+        )
+    }
+
+    // Result dialog
+    if (showResultDialog && executionResult != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showResultDialog = false
+                viewModel.clearExecutionResult()
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (executionResult!!.success) Icons.Default.CheckCircle else Icons.Default.Error,
+                        contentDescription = null,
+                        tint = if (executionResult!!.success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (executionResult!!.success) "تم التنفيذ بنجاح" else "فشل التنفيذ")
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = "رمز الخروج: ${executionResult!!.exitCode}",
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    if (executionResult!!.output.isNotEmpty()) {
+                        Text(
+                            text = "الناتج:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        Text(
+                            text = executionResult!!.output,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(4.dp)
+                                )
+                                .padding(8.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    if (executionResult!!.error.isNotEmpty()) {
+                        Text(
+                            text = "الخطأ:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        Text(
+                            text = executionResult!!.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.errorContainer,
+                                    RoundedCornerShape(4.dp)
+                                )
+                                .padding(8.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showResultDialog = false
+                        viewModel.clearExecutionResult()
+                    }
+                ) {
+                    Text("حسنًا")
                 }
             }
         )
