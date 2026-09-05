@@ -12,7 +12,7 @@ import javax.inject.Singleton
 /**
  * Executes commands directly in Android shell using ProcessBuilder.
  * This doesn't require Termux bridge but also doesn't run in Termux environment.
- * 
+ *
  * For Termux-specific features, a Termux bridge app is required.
  */
 @Singleton
@@ -90,7 +90,7 @@ class ShellCommandExecutor @Inject constructor() : TermuxCommandExecutor {
 
             val exitCode = process.exitValue()
 
-            ExecutionResult(
+            return ExecutionResult(
                 output = outputBuilder.toString(),
                 error = errorBuilder.toString(),
                 exitCode = exitCode
