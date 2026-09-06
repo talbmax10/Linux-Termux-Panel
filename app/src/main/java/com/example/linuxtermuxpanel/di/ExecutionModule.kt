@@ -6,6 +6,7 @@ import com.example.linuxtermuxpanel.execution.TermuxCommandExecutor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -16,7 +17,7 @@ object ExecutionModule {
     @Provides
     @Singleton
     fun provideTermuxCommandExecutor(
-        context: Context
+        @ApplicationContext context: Context
     ): TermuxCommandExecutor {
         return FileBasedTermuxExecutor(context, "com.termux", 30L)
     }
