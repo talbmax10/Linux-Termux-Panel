@@ -1,13 +1,5 @@
 package com.example.linuxtermuxpanel.di
 
-import com.example.linuxtermuxpanel.execution.ShellCommandExecutor
-import com.example.linuxtermuxpanel.execution.TermuxCommandExecutor
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
-
 import android.content.Context
 import com.example.linuxtermuxpanel.execution.FileBasedTermuxExecutor
 import com.example.linuxtermuxpanel.execution.TermuxCommandExecutor
