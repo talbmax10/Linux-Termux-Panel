@@ -8,13 +8,24 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+import android.content.Context
+import com.example.linuxtermuxpanel.execution.FileBasedTermuxExecutor
+import com.example.linuxtermuxpanel.execution.TermuxCommandExecutor
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class ExecutionModule {
+object ExecutionModule {
 
-    @Binds
+    @Provides
     @Singleton
-    abstract fun bindTermuxCommandExecutor(
-        shellCommandExecutor: ShellCommandExecutor
-    ): TermuxCommandExecutor
+    fun provideTermuxCommandExecutor(
+        context: Context
+    ): TermuxCommandExecutor {
+        return FileBasedTermuxExecutor(context, "com.termux", 30L)
+    }
 }

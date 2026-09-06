@@ -2,7 +2,9 @@ package com.example.linuxtermuxpanel.execution
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import androidx.core.content.FileProvider
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -28,7 +30,7 @@ class FileBasedTermuxExecutor(
     override suspend fun execute(command: String): ExecutionResult = withContext(Dispatchers.IO) {
         if (command.isBlank()) return@withContext ExecutionResult(error = "Empty command", exitCode = -1)
 
-        val cacheDir = context.cacheDir
+        val cacheDir = context.externalCacheDir ?: context.cacheDir
         val uuid = UUID.randomUUID().toString()
         val commandFile = File(cacheDir, "command_$uuid.sh")
         val outputFile = File(cacheDir, "output_$uuid.txt")
@@ -39,11 +41,14 @@ class FileBasedTermuxExecutor(
             commandFile.writeText("$command\nexitCode=\$?\nprintf '%s' \"\$exitCode\" > '${exitCodeFile.absolutePath}'\n")
 
             val script = "sh '${commandFile.absolutePath}' > '${outputFile.absolutePath}' 2> '${errorFile.absolutePath}'"
+            val commandUri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", commandFile)
             val intent = Intent(ACTION_RUN_COMMAND).apply {
                 setPackage(termuxPackageName)
                 putExtra(EXTRA_COMMAND, "/data/data/com.termux/files/usr/bin/sh")
                 putExtra(EXTRA_ARGUMENTS, arrayOf("-c", script))
                 putExtra(EXTRA_BACKGROUND, true)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                data = commandUri
             }
             context.sendBroadcast(intent)
 
