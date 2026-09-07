@@ -1,155 +1,159 @@
 package com.example.linuxtermuxpanel.ui.settings
 
-import android.content.Context
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.linuxtermuxpanel.ui.theme.LinuxTermuxPanelTheme
-import com.example.linuxtermuxpanel.ui.viewmodel.Settings
-import com.example.linuxtermuxpanel.ui.viewmodel.SettingsViewModel
-import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-
-@AndroidEntryPoint
-class SettingsActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            LinuxTermuxPanelTheme {
-                SettingsScreen(navController = rememberNavController())
-            }
-        }
-    }
-}
+import com.example.linuxtermuxpanel.ui.navigation.navigateBack
+import com.example.linuxtermuxpanel.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavHostController) {
     val viewModel: SettingsViewModel = hiltViewModel()
     val settings by viewModel.settings.collectAsState()
-    val currentSettings = settings ?: Settings()
+    val message by viewModel.message.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // We'll use temporary state for the fields that are being edited
-    var termuxPackageName by remember { mutableStateOf<String>(currentSettings.termuxPackageName) }
-    var ubuntuLoginCommand by remember { mutableStateOf<String>(currentSettings.ubuntuLoginCommand) }
-    var ubuntuDistributionName by remember { mutableStateOf<String>(currentSettings.ubuntuDistributionName) }
-    var autoWrapUbuntuCommands by remember { mutableStateOf<Boolean>(currentSettings.autoWrapUbuntuCommands) }
-    var timeoutSeconds by remember { mutableStateOf<Int>(currentSettings.timeoutSeconds) }
+    LaunchedEffect(message) {
+        val currentMessage = message
+        if (currentMessage != null) {
+            snackbarHostState.showSnackbar(currentMessage)
+            viewModel.consumeMessage()
+        }
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("الإعدادات") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigate("dashboard") }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = null)
+                    IconButton(onClick = { navController.navigateBack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "رجوع")
                     }
                 }
             )
-        }
-    ) {
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.Top
         ) {
-            Text(
-                text = "إعداد Termux",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.align(Alignment.Start)
-            )
+            Text(text = "إعداد Termux", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 label = { Text("اسم حزمة Termux") },
-                value = termuxPackageName,
-                onValueChange = { termuxPackageName = it },
-                isError = termuxPackageName.isEmpty()
+                value = settings.termuxPackageName,
+                onValueChange = viewModel::onTermuxPackageChanged,
+                isError = settings.termuxPackageName.isBlank(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "أمر الدخول إلى Ubuntu",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.align(Alignment.Start)
+                text = "مثال: com.termux أو com.termux.fdroid",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(text = "بيئة Ubuntu", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
-                label = { Text("أمر الدخول (مثال: proot-distro login ubuntu)") },
-                value = ubuntuLoginCommand,
-                onValueChange = { ubuntuLoginCommand = it },
-                isError = ubuntuLoginCommand.isEmpty()
+                label = { Text("أمر الدخول إلى Ubuntu") },
+                value = settings.ubuntuLoginCommand,
+                onValueChange = viewModel::onUbuntuLoginCommandChanged,
+                isError = settings.ubuntuLoginCommand.isBlank(),
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                label = { Text("اسم توزيع Ubuntu (افتراضي: ubuntu)") },
-                value = ubuntuDistributionName,
-                onValueChange = { ubuntuDistributionName = it }
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "إعدادات تنفيذ الأوامر",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.align(Alignment.Start)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "لَفّ أوامر Ubuntu تلقائيًا",
-                    modifier = Modifier.weight(1f)
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "لَفّ أوامر Ubuntu تلقائيًا", modifier = Modifier.weight(1f))
                 Switch(
-                    checked = autoWrapUbuntuCommands,
-                    onCheckedChange = { autoWrapUbuntuCommands = it }
+                    checked = settings.autoWrapUbuntuCommands,
+                    onCheckedChange = viewModel::onAutoWrapChanged
                 )
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(text = "تنفيذ الأوامر", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 label = { Text("مهلة تنفيذ الأمر (بالثواني)") },
-                value = timeoutSeconds.toString(),
-                onValueChange = {
-                    // Try to parse to int, if fails, keep the old value
-                    try {
-                        timeoutSeconds = it.toInt()
-                    } catch (e: NumberFormatException) {
-                        // Keep the old value, show error? We'll just keep the old value and maybe show an error.
-                        // For simplicity, we'll just keep the old value and not update the state.
-                    }
+                value = if (settings.timeoutSeconds == 0) "" else settings.timeoutSeconds.toString(),
+                onValueChange = { text ->
+                    val digits = text.filter { it.isDigit() }.take(4)
+                    viewModel.onTimeoutChanged(digits.toIntOrNull() ?: 0)
                 },
-                isError = timeoutSeconds <= 0
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = settings.timeoutSeconds <= 0,
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(modifier = Modifier.height(24.dp))
-            // Save button
             Button(
-                onClick = {
-                    // Save the settings
-                    viewModel.saveSettings(
-                        Settings(
-                            termuxPackageName = termuxPackageName,
-                            ubuntuLoginCommand = ubuntuLoginCommand,
-                            ubuntuDistributionName = ubuntuDistributionName,
-                            autoWrapUbuntuCommands = autoWrapUbuntuCommands,
-                            timeoutSeconds = timeoutSeconds
-                        )
-                    )
-                    // Navigate back to dashboard
-                    navController.navigate("dashboard")
-                },
+                onClick = { viewModel.save() },
+                enabled = settings.termuxPackageName.isNotBlank() &&
+                    settings.ubuntuLoginCommand.isNotBlank() &&
+                    settings.timeoutSeconds > 0,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("حفظ الإعدادات")
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = { viewModel.resetToDefaults() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("استعادة الإعدادات الافتراضية")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "لتشغيل الأوامر عبر Termux يجب إضافة السطر allow-external-apps=true " +
+                    "إلى الملف ~/.termux/termux.properties ثم تنفيذ الأمر termux-reload-settings.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

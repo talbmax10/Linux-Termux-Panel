@@ -16,7 +16,7 @@ interface CommandDao {
     fun getAllCommands(): Flow<List<Command>>
 
     @Query("SELECT * FROM commands WHERE id = :commandId")
-    fun getCommandById(commandId: Long): Command
+    suspend fun getCommandById(commandId: Long): Command?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCommand(command: Command): Long

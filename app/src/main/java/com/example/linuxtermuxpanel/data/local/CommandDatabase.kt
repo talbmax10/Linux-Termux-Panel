@@ -11,7 +11,7 @@ import com.example.linuxtermuxpanel.data.model.Service
 
 @Database(
     entities = [Command::class, Service::class, ExecutionHistory::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(DatabaseConverters::class)

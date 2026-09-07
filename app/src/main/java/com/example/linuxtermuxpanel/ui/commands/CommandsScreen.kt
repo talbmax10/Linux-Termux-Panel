@@ -1,31 +1,66 @@
 package com.example.linuxtermuxpanel.ui.commands
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.linuxtermuxpanel.data.model.Command
-import com.example.linuxtermuxpanel.ui.theme.LinuxTermuxPanelTheme
-import com.example.linuxtermuxpanel.ui.viewmodel.CommandViewModel
-import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import com.example.linuxtermuxpanel.data.model.Command
+import com.example.linuxtermuxpanel.data.model.Environments
+import com.example.linuxtermuxpanel.ui.components.ExecutionResultDialog
+import com.example.linuxtermuxpanel.ui.navigation.navigateBack
+import com.example.linuxtermuxpanel.ui.viewmodel.CommandViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,492 +68,364 @@ fun CommandsScreen(navController: NavHostController) {
     val viewModel: CommandViewModel = hiltViewModel()
     val commands by viewModel.commands.collectAsState()
     val isExecuting by viewModel.isExecuting.collectAsState()
+    val runningCommandId by viewModel.runningCommandId.collectAsState()
     val executionResult by viewModel.lastExecutionResult.collectAsState()
 
-    // Dialog state
-    var showDialog by remember { mutableStateOf(false) }
-    var editingCommand by remember { mutableStateOf<Command?>(null) }
-    var dialogName by remember { mutableStateOf("") }
-    var dialogDescription by remember { mutableStateOf("") }
-    var dialogCommand by remember { mutableStateOf("") }
-    var dialogEnvironment by remember { mutableStateOf("Termux") }
-    var dialogIcon by remember { mutableStateOf("") }
-    var dialogIsFavorite by remember { mutableStateOf(false) }
-    var dialogRunInBackground by remember { mutableStateOf(false) }
-    var dialogNeedsInteractiveTerminal by remember { mutableStateOf(false) }
-    var dialogEnvironmentExpanded by remember { mutableStateOf(false) }
-
-    // Confirmation dialog state
-    var showConfirmationDialog by remember { mutableStateOf(false) }
+    var editorState by remember { mutableStateOf<CommandFormState?>(null) }
     var commandToDelete by remember { mutableStateOf<Command?>(null) }
-
-    // Result dialog state
-    var showResultDialog by remember { mutableStateOf(false) }
-
-    // Environment options
-    val environments = listOf("Termux", "Ubuntu")
-
-    val onSaveCommand = {
-        val commandToSave = editingCommand ?: Command(
-            name = dialogName,
-            description = dialogDescription,
-            command = dialogCommand,
-            environment = dialogEnvironment,
-            icon = dialogIcon,
-            isFavorite = dialogIsFavorite,
-            runInBackground = dialogRunInBackground,
-            needsInteractiveTerminal = dialogNeedsInteractiveTerminal
-        ).copy(
-            name = dialogName,
-            description = dialogDescription,
-            command = dialogCommand,
-            environment = dialogEnvironment,
-            icon = dialogIcon,
-            isFavorite = dialogIsFavorite,
-            runInBackground = dialogRunInBackground,
-            needsInteractiveTerminal = dialogNeedsInteractiveTerminal
-        )
-
-        if (editingCommand != null) {
-            viewModel.updateCommand(commandToSave)
-        } else {
-            viewModel.addCommand(commandToSave)
-        }
-
-        showDialog = false
-        editingCommand = null
-        dialogName = ""
-        dialogDescription = ""
-        dialogCommand = ""
-        dialogEnvironment = "Termux"
-        dialogIcon = ""
-        dialogIsFavorite = false
-        dialogRunInBackground = false
-        dialogNeedsInteractiveTerminal = false
-    }
-
-    // Launch effect to show result dialog when execution completes
-    LaunchedEffect(executionResult) {
-        if (executionResult != null && !isExecuting) {
-            showResultDialog = true
-        }
-    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("الأوامر") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigate("dashboard") }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = null)
+                    IconButton(onClick = { navController.navigateBack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "رجوع")
                     }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    showDialog = true
-                    editingCommand = null
-                    dialogName = ""
-                    dialogDescription = ""
-                    dialogCommand = ""
-                    dialogEnvironment = "Termux"
-                    dialogIcon = ""
-                    dialogIsFavorite = false
-                    dialogRunInBackground = false
-                    dialogNeedsInteractiveTerminal = false
-                }
-            ) {
+            FloatingActionButton(onClick = { editorState = CommandFormState() }) {
                 Icon(Icons.Default.Add, contentDescription = "إضافة أمر جديد")
             }
         },
         floatingActionButtonPosition = FabPosition.End
-    ) {
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = {
-                    Text(if (editingCommand == null) "إضافة أمر جديد" else "تعديل الأمر")
-                },
-                text = {
-                    Column(
-                        modifier = Modifier.verticalScroll(rememberScrollState())
-                    ) {
-                        OutlinedTextField(
-                            label = { Text("اسم الأمر") },
-                            value = dialogName,
-                            onValueChange = { dialogName = it },
-                            isError = dialogName.isEmpty(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            label = { Text("الوصف (اختياري)") },
-                            value = dialogDescription,
-                            onValueChange = { dialogDescription = it },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            label = { Text("الأمر") },
-                            value = dialogCommand,
-                            onValueChange = { dialogCommand = it },
-                            isError = dialogCommand.isEmpty(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            label = { Text("البيئة") },
-                            value = dialogEnvironment,
-                            onValueChange = { dialogEnvironment = it },
-                            readOnly = true,
-                            trailingIcon = {
-                                IconButton(
-                                    onClick = { dialogEnvironmentExpanded = !dialogEnvironmentExpanded }
-                                ) {
-                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        if (dialogEnvironmentExpanded) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                        MaterialTheme.colorScheme.surfaceVariant,
-                                        RoundedCornerShape(4.dp)
-                                    )
-                            ) {
-                                environments.forEach { env ->
-                                    Text(
-                                        text = env,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                dialogEnvironment = env
-                                                dialogEnvironmentExpanded = false
-                                            }
-                                            .padding(12.dp)
-                                            .background(
-                                                if (dialogEnvironment == env)
-                                                    MaterialTheme.colorScheme.primaryContainer
-                                                else
-                                                    Color.Transparent
-                                            )
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            label = { Text("الأيقونة (اختياري)") },
-                            value = dialogIcon,
-                            onValueChange = { dialogIcon = it },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "المفضلة",
-                                modifier = Modifier.weight(1f)
-                            )
-                            Switch(
-                                checked = dialogIsFavorite,
-                                onCheckedChange = { dialogIsFavorite = it }
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "تشغيل في الخلفية",
-                                modifier = Modifier.weight(1f)
-                            )
-                            Switch(
-                                checked = dialogRunInBackground,
-                                onCheckedChange = { dialogRunInBackground = it }
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "يحتاج Terminal تفاعلي",
-                                modifier = Modifier.weight(1f)
-                            )
-                            Switch(
-                                checked = dialogNeedsInteractiveTerminal,
-                                onCheckedChange = { dialogNeedsInteractiveTerminal = it }
-                            )
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            if (dialogName.isNotEmpty() && dialogCommand.isNotEmpty()) {
-                                onSaveCommand()
-                            }
-                        }
-                    ) {
-                        Text("حفظ")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDialog = false }) {
-                        Text("إلغاء")
-                    }
-                }
-            )
-        }
-
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            items(commands) { command ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = command.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (command.isFavorite) {
-                                Icon(
-                                    imageVector = Icons.Default.Favorite,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.secondary
-                                )
-                            }
-                        }
-                        if (!command.description.isNullOrEmpty()) {
-                            Text(
-                                text = command.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 8.dp)
-                            )
-                        }
-                        Text(
-                            text = "الأمر: ${command.command}",
-                            style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 4.dp)
-                        )
-                        Text(
-                            text = "البيئة: ${command.environment}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 12.dp)
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            // زر التشغيل
-                            FilledTonalButton(
-                                onClick = { viewModel.executeCommand(command) },
-                                enabled = !isExecuting,
-                                modifier = Modifier
-                            ) {
-                                Icon(
-                                    imageVector = if (isExecuting) Icons.Default.HourglassTop else Icons.Default.PlayArrow,
-                                    contentDescription = "تشغيل",
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("تشغيل")
-                            }
-                            // زر التعديل
-                            OutlinedButton(
-                                onClick = {
-                                    showDialog = true
-                                    editingCommand = command
-                                    dialogName = command.name
-                                    dialogDescription = command.description ?: ""
-                                    dialogCommand = command.command
-                                    dialogEnvironment = command.environment
-                                    dialogIcon = command.icon ?: ""
-                                    dialogIsFavorite = command.isFavorite
-                                    dialogRunInBackground = command.runInBackground
-                                    dialogNeedsInteractiveTerminal = command.needsInteractiveTerminal
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "تعديل",
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("تعديل")
-                            }
-                            // زر الحذف
-                            OutlinedButton(
-                                onClick = {
-                                    showConfirmationDialog = true
-                                    commandToDelete = command
-                                },
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error
-                                )
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "حذف",
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("حذف")
-                            }
-                        }
-                    }
+    ) { paddingValues ->
+        if (commands.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "لا توجد أوامر محفوظة. اضغط + لإضافة أمر جديد.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp)
+            ) {
+                items(commands, key = { it.id }) { command ->
+                    CommandCard(
+                        command = command,
+                        isRunning = runningCommandId == command.id,
+                        executionDisabled = isExecuting,
+                        onRun = { viewModel.executeCommand(command) },
+                        onEdit = { editorState = CommandFormState.from(command) },
+                        onDelete = { commandToDelete = command },
+                        onToggleFavorite = { viewModel.toggleFavorite(command) }
+                    )
                 }
             }
         }
     }
 
-    // Confirmation dialog for deletion
-    if (showConfirmationDialog && commandToDelete != null) {
-        AlertDialog(
-            onDismissRequest = {
-                showConfirmationDialog = false
-                commandToDelete = null
-            },
-            title = { Text("تأكيد الحذف") },
-            text = { Text("هل أنت متأكد من حذف الأمر \"${commandToDelete?.name}\"؟") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        commandToDelete?.let { viewModel.deleteCommand(it) }
-                        showConfirmationDialog = false
-                        commandToDelete = null
-                    }
-                ) {
-                    Text("حذف")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showConfirmationDialog = false
-                        commandToDelete = null
-                    }
-                ) {
-                    Text("إلغاء")
-                }
+    editorState?.let { state ->
+        CommandEditorDialog(
+            state = state,
+            onStateChange = { editorState = it },
+            onDismiss = { editorState = null },
+            onSave = { form ->
+                val command = form.toCommand()
+                if (form.id == 0L) viewModel.addCommand(command) else viewModel.updateCommand(command)
+                editorState = null
             }
         )
     }
 
-    // Result dialog
-    if (showResultDialog && executionResult != null) {
+    commandToDelete?.let { command ->
         AlertDialog(
-            onDismissRequest = {
-                showResultDialog = false
-                viewModel.clearExecutionResult()
-            },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = if (executionResult!!.success) Icons.Default.CheckCircle else Icons.Default.Error,
-                        contentDescription = null,
-                        tint = if (executionResult!!.success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (executionResult!!.success) "تم التنفيذ بنجاح" else "فشل التنفيذ")
-                }
-            },
-            text = {
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState())
-                ) {
-                    Text(
-                        text = "رمز الخروج: ${executionResult!!.exitCode}",
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    if (executionResult!!.output.isNotEmpty()) {
-                        Text(
-                            text = "الناتج:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        Text(
-                            text = executionResult!!.output,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                    RoundedCornerShape(4.dp)
-                                )
-                                .padding(8.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                    if (executionResult!!.error.isNotEmpty()) {
-                        Text(
-                            text = "الخطأ:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        Text(
-                            text = executionResult!!.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    MaterialTheme.colorScheme.errorContainer,
-                                    RoundedCornerShape(4.dp)
-                                )
-                                .padding(8.dp)
-                        )
-                    }
-                }
-            },
+            onDismissRequest = { commandToDelete = null },
+            title = { Text("تأكيد الحذف") },
+            text = { Text("هل أنت متأكد من حذف الأمر \"${command.name}\"؟") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showResultDialog = false
-                        viewModel.clearExecutionResult()
+                        viewModel.deleteCommand(command)
+                        commandToDelete = null
                     }
-                ) {
-                    Text("حسنًا")
+                ) { Text("حذف") }
+            },
+            dismissButton = {
+                TextButton(onClick = { commandToDelete = null }) { Text("إلغاء") }
+            }
+        )
+    }
+
+    executionResult?.let { result ->
+        ExecutionResultDialog(result = result, onDismiss = { viewModel.clearExecutionResult() })
+    }
+}
+
+@Composable
+private fun CommandCard(
+    command: Command,
+    isRunning: Boolean,
+    executionDisabled: Boolean,
+    onRun: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onToggleFavorite: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = command.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = onToggleFavorite) {
+                    Icon(
+                        imageVector = if (command.isFavorite) {
+                            Icons.Default.Favorite
+                        } else {
+                            Icons.Default.FavoriteBorder
+                        },
+                        contentDescription = "المفضلة",
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
                 }
             }
+
+            if (!command.description.isNullOrBlank()) {
+                Text(
+                    text = command.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                )
+            }
+
+            Text(
+                text = "الأمر: ${command.command}",
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp)
+            )
+            Text(
+                text = "البيئة: ${command.environment}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilledTonalButton(
+                    onClick = onRun,
+                    enabled = !executionDisabled
+                ) {
+                    if (isRunning) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("تشغيل")
+                }
+                OutlinedButton(onClick = onEdit) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("تعديل")
+                }
+                OutlinedButton(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("حذف")
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CommandEditorDialog(
+    state: CommandFormState,
+    onStateChange: (CommandFormState) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: (CommandFormState) -> Unit
+) {
+    val isValid = state.name.isNotBlank() && state.command.isNotBlank()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (state.id == 0L) "إضافة أمر جديد" else "تعديل الأمر") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                OutlinedTextField(
+                    label = { Text("اسم الأمر") },
+                    value = state.name,
+                    onValueChange = { onStateChange(state.copy(name = it)) },
+                    isError = state.name.isBlank(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    label = { Text("الوصف (اختياري)") },
+                    value = state.description,
+                    onValueChange = { onStateChange(state.copy(description = it)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    label = { Text("الأمر") },
+                    value = state.command,
+                    onValueChange = { onStateChange(state.copy(command = it)) },
+                    isError = state.command.isBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = "البيئة", style = MaterialTheme.typography.labelLarge)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Environments.all.forEach { environment ->
+                        FilterChip(
+                            selected = state.environment == environment,
+                            onClick = { onStateChange(state.copy(environment = environment)) },
+                            label = { Text(environment) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                SwitchRow(
+                    label = "المفضلة",
+                    checked = state.isFavorite,
+                    onCheckedChange = { onStateChange(state.copy(isFavorite = it)) }
+                )
+                SwitchRow(
+                    label = "تشغيل في الخلفية",
+                    checked = state.runInBackground,
+                    onCheckedChange = { onStateChange(state.copy(runInBackground = it)) }
+                )
+                SwitchRow(
+                    label = "يحتاج طرفية تفاعلية",
+                    checked = state.needsInteractiveTerminal,
+                    onCheckedChange = { onStateChange(state.copy(needsInteractiveTerminal = it)) }
+                )
+                if (state.needsInteractiveTerminal) {
+                    Text(
+                        text = "في الوضع التفاعلي يُفتح الأمر داخل جلسة Termux ولا يمكن التقاط المخرجات.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onSave(state) }, enabled = isValid) { Text("حفظ") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("إلغاء") }
+        }
+    )
+}
+
+@Composable
+private fun SwitchRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp)
+    ) {
+        Text(text = label, modifier = Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+/** حالة نموذج إضافة/تعديل الأمر. */
+data class CommandFormState(
+    val id: Long = 0L,
+    val name: String = "",
+    val description: String = "",
+    val command: String = "",
+    val environment: String = Environments.TERMUX,
+    val icon: String = "",
+    val isFavorite: Boolean = false,
+    val runInBackground: Boolean = false,
+    val needsInteractiveTerminal: Boolean = false,
+    val createdAt: java.util.Date = java.util.Date()
+) {
+    fun toCommand(): Command = Command(
+        id = id,
+        name = name.trim(),
+        description = description.trim().ifBlank { null },
+        command = command.trim(),
+        environment = environment,
+        icon = icon.trim().ifBlank { null },
+        isFavorite = isFavorite,
+        runInBackground = runInBackground,
+        needsInteractiveTerminal = needsInteractiveTerminal,
+        createdAt = createdAt
+    )
+
+    companion object {
+        fun from(command: Command): CommandFormState = CommandFormState(
+            id = command.id,
+            name = command.name,
+            description = command.description.orEmpty(),
+            command = command.command,
+            environment = command.environment,
+            icon = command.icon.orEmpty(),
+            isFavorite = command.isFavorite,
+            runInBackground = command.runInBackground,
+            needsInteractiveTerminal = command.needsInteractiveTerminal,
+            createdAt = command.createdAt
         )
     }
 }

@@ -1,31 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- مطلوبة لإرسال الأوامر إلى Termux -->
     <uses-permission android:name="com.termux.permission.RUN_COMMAND" />
+
+    <!--
+        على أندرويد 11+ (API 30) لا يستطيع التطبيق رؤية تطبيقات أخرى أو تشغيل خدماتها
+        دون التصريح عنها هنا. بدون هذا القسم يفشل تشغيل أوامر Termux بصمت.
+    -->
+    <queries>
+        <package android:name="com.termux" />
+        <package android:name="com.termux.fdroid" />
+        <intent>
+            <action android:name="com.termux.RUN_COMMAND" />
+        </intent>
+    </queries>
 
     <application
         android:allowBackup="true"
-        android:icon="@android:drawable/ic_menu_manage"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:name=".LinuxTermuxPanelApplication"
-        android:roundIcon="@android:drawable/ic_menu_manage"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
+        android:theme="@style/Theme.LinuxTermuxPanel">
 
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths" />
-        </provider>
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@android:style/Theme.Material.NoActionBar">
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
+            android:theme="@style/Theme.LinuxTermuxPanel">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

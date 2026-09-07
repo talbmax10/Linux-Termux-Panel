@@ -1,5 +1,24 @@
+# Gradle
 .gradle/
 build/
 **/build/
-.local.properties
+
+# Android Studio / IntelliJ
+.idea/
 *.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ملفات محلية لا يجب رفعها (تحتوي مسار Android SDK)
+local.properties
+
+# مخرجات البناء
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# نظام التشغيل
+.DS_Store
+Thumbs.db

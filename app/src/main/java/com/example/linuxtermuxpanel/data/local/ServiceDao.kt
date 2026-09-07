@@ -16,7 +16,7 @@ interface ServiceDao {
     fun getAllServices(): Flow<List<Service>>
 
     @Query("SELECT * FROM services WHERE id = :serviceId")
-    fun getServiceById(serviceId: Long): Service
+    suspend fun getServiceById(serviceId: Long): Service?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertService(service: Service): Long

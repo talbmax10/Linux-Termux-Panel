@@ -1,108 +1,89 @@
 package com.example.linuxtermuxpanel.execution
 
 import android.util.Log
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
- * Executes commands directly in Android shell using ProcessBuilder.
- * This doesn't require Termux bridge but also doesn't run in Termux environment.
- *
- * For Termux-specific features, a Termux bridge app is required.
+ * ينفّذ الأوامر داخل شِل أندرويد باستخدام ProcessBuilder.
+ * يُستخدم كخطة بديلة عندما لا يكون Termux مثبّتًا (إمكانياته محدودة داخل صندوق التطبيق).
  */
 @Singleton
-class ShellCommandExecutor @Inject constructor() : TermuxCommandExecutor {
+class ShellCommandExecutor @Inject constructor() {
 
-    companion object {
-        private const val TAG = "ShellCommandExecutor"
-        private const val DEFAULT_TIMEOUT_SECONDS = 30L
-    }
+    suspend fun execute(command: String, timeoutSeconds: Long): ExecutionResult =
+        withContext(Dispatchers.IO) { executeBlocking(command, timeoutSeconds) }
 
-    override suspend fun execute(command: String): ExecutionResult = withContext(Dispatchers.IO) {
-        executeWithTimeout(command, DEFAULT_TIMEOUT_SECONDS)
-    }
-
-    private fun executeWithTimeout(command: String, timeoutSeconds: Long): ExecutionResult {
+    private fun executeBlocking(command: String, timeoutSeconds: Long): ExecutionResult {
         if (command.isBlank()) {
-            return ExecutionResult(error = "Empty command", exitCode = -1)
+            return ExecutionResult(error = "الأمر فارغ", exitCode = -1)
         }
 
         var process: Process? = null
-        try {
-            val processBuilder = ProcessBuilder()
+        return try {
+            process = ProcessBuilder()
                 .command("sh", "-c", command)
                 .redirectErrorStream(false)
-
-            process = processBuilder.start()
-
-            val outputReader = BufferedReader(InputStreamReader(process.inputStream))
-            val errorReader = BufferedReader(InputStreamReader(process.errorStream))
+                .start()
 
             val outputBuilder = StringBuilder()
             val errorBuilder = StringBuilder()
 
-            val outputThread = Thread {
-                try {
-                    var line: String?
-                    while (outputReader.readLine().also { line = it } != null) {
-                        if (outputBuilder.isNotEmpty()) outputBuilder.append("\n")
-                        outputBuilder.append(line)
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error reading output", e)
-                }
-            }
-
-            val errorThread = Thread {
-                try {
-                    var line: String?
-                    while (errorReader.readLine().also { line = it } != null) {
-                        if (errorBuilder.isNotEmpty()) errorBuilder.append("\n")
-                        errorBuilder.append(line)
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error reading error", e)
-                }
-            }
-
+            val outputThread = readerThread(process.inputStream.reader(), outputBuilder)
+            val errorThread = readerThread(process.errorStream.reader(), errorBuilder)
             outputThread.start()
             errorThread.start()
 
-            val timeoutMillis = TimeUnit.SECONDS.toMillis(timeoutSeconds.coerceAtLeast(1))
-            val exited = process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)
+            val exited = process.waitFor(
+                TimeUnit.SECONDS.toMillis(timeoutSeconds.coerceAtLeast(1L)),
+                TimeUnit.MILLISECONDS
+            )
 
-            outputThread.join(1000)
-            errorThread.join(1000)
+            outputThread.join(1_000)
+            errorThread.join(1_000)
 
             if (!exited) {
                 process.destroyForcibly()
                 return ExecutionResult(
-                    output = outputBuilder.toString(),
-                    error = "Command timed out after $timeoutSeconds seconds",
+                    output = outputBuilder.toString().trim(),
+                    error = "انتهت مهلة تنفيذ الأمر بعد $timeoutSeconds ثانية.",
                     exitCode = -1
                 )
             }
 
-            val exitCode = process.exitValue()
-
-            return ExecutionResult(
-                output = outputBuilder.toString(),
-                error = errorBuilder.toString(),
-                exitCode = exitCode
+            ExecutionResult(
+                output = outputBuilder.toString().trim(),
+                error = errorBuilder.toString().trim(),
+                exitCode = process.exitValue()
             )
         } catch (e: Exception) {
-            Log.e(TAG, "Error executing command: $command", e)
-            return ExecutionResult(
-                error = "Error: ${e.message}",
-                exitCode = -1
-            )
+            Log.e(TAG, "خطأ أثناء تنفيذ الأمر: $command", e)
+            ExecutionResult(error = "خطأ: ${e.message ?: e.javaClass.simpleName}", exitCode = -1)
         } finally {
             process?.destroy()
         }
+    }
+
+    private fun readerThread(reader: java.io.Reader, builder: StringBuilder): Thread = Thread {
+        try {
+            BufferedReader(reader).useLines { lines ->
+                lines.forEach { line ->
+                    synchronized(builder) {
+                        if (builder.isNotEmpty()) builder.append('\n')
+                        builder.append(line)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "خطأ أثناء قراءة مخرجات الأمر", e)
+        }
+    }
+
+    companion object {
+        private const val TAG = "ShellCommandExecutor"
     }
 }

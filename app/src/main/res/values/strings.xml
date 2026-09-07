@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">LinuxTermuxPanel</string>
-    <string name="termux_package_name">com.termux</string>
+    <string name="app_name">لوحة Linux/Termux</string>
+    <string name="termux_package_name" translatable="false">com.termux</string>
 </resources>

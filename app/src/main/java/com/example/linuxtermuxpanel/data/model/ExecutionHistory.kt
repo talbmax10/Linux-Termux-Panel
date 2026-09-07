@@ -20,8 +20,11 @@ import java.util.Date
 )
 data class ExecutionHistory(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val commandId: Long,
-    val commandText: String, // The actual command that was executed (including environment wrapper if needed)
+    // يكون null عندما يكون مصدر التنفيذ خدمة وليس أمرًا محفوظًا،
+    // وبهذا لا نكسر قيد المفتاح الأجنبي (Foreign Key) عند تسجيل تنفيذ الخدمات.
+    val commandId: Long? = null,
+    val label: String? = null, // اسم الأمر/الخدمة كما يظهر للمستخدم
+    val commandText: String, // الأمر الفعلي الذي نُفِّذ
     val output: String? = null,
     val error: String? = null,
     val exitCode: Int = -1, // -1 indicates not yet completed or error in execution

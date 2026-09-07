@@ -16,7 +16,7 @@ interface ExecutionHistoryDao {
     fun getAllExecutionHistory(): Flow<List<ExecutionHistory>>
 
     @Query("SELECT * FROM execution_history WHERE id = :historyId")
-    fun getExecutionHistoryById(historyId: Long): ExecutionHistory
+    suspend fun getExecutionHistoryById(historyId: Long): ExecutionHistory?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertExecutionHistory(history: ExecutionHistory): Long
